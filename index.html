@@ -34,6 +34,7 @@
       </select>
       <button id="fit-route-btn" class="btn btn-ghost">Rota'ya sığdır</button>
       <button id="reset-view-btn" class="btn btn-ghost">Görünümü sıfırla</button>
+      <button id="edit-routes-btn" class="btn btn-ghost">Rota Düzenle</button>
       <button id="share-link-btn" class="btn btn-ghost">Bağlantıyı paylaş</button>
       <button id="sign-in-btn" class="btn btn-primary">Giriş Yap</button>
       <button id="sign-out-btn" class="btn hidden">Çıkış</button>
@@ -46,6 +47,16 @@
     <div class="actions">
       <button id="undo-last">Son rotayı geri al</button>
       <button id="clear-all" class="danger">Hepsini temizle</button>
+    </div>
+  </div>
+
+  <div id="route-panel" class="hidden">
+    <div class="panel-header">
+      <h3>Uçuş Rotaları</h3>
+      <button id="close-route-panel" class="close-btn">✕</button>
+    </div>
+    <div id="route-list" class="route-list">
+      <!-- Rota segmentleri buraya eklenecek -->
     </div>
   </div>
   <div id="legend">
