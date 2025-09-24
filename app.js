@@ -140,12 +140,14 @@ var cityMarkers = new Map();
 var cityData = new Map(); // id -> last data snapshot
 var routeLine = L.polyline([], { color: "#1e40af", weight: 8, className: 'route-line' }).addTo(map);
 
-// Rota çizgisine tıklama eventi
+// Rota çizgisine CTRL + tıklama eventi
 routeLine.on('click', function(e) {
-  if (!isAdmin) {
-    alert('Rota düzenlemek için admin olarak giriş yapmanız gerekiyor.');
-    return;
-  }
+  if (!isAdmin) return;
+  
+  // Sadece CTRL tuşu basılıyken çalışsın
+  if (!e.originalEvent.ctrlKey) return;
+  
+  e.originalEvent.stopPropagation(); // Harita tıklama eventini engelle
   openFlightModal(e.latlng);
 });
 var routeArrows = []; // small arrow markers along the route
@@ -318,23 +320,9 @@ metaDoc.onSnapshot(function (doc) {
   drawRoute(order);
 });
 
-// Admin: haritaya tıklayınca nokta ekle (sadece rota çizgisi dışında)
+// Admin: haritaya tıklayınca nokta ekle
 map.on("click", function (e) {
   if (!isAdmin) return;
-  
-  // Rota çizgisine tıklanıp tıklanmadığını kontrol et
-  var clickedOnRoute = false;
-  var routeLatLngs = routeLine.getLatLngs();
-  for (var i = 0; i < routeLatLngs.length - 1; i++) {
-    var distance = haversineNm(e.latlng.lat, e.latlng.lng, routeLatLngs[i].lat, routeLatLngs[i].lng);
-    if (distance < 0.1) { // 0.1 NM içinde ise rota çizgisine yakın
-      clickedOnRoute = true;
-      break;
-    }
-  }
-  
-  if (clickedOnRoute) return; // Rota çizgisine tıklandıysa harita eventini çalıştırma
-  
   var id = latLngId(e.latlng);
   var name = prompt("Şehir/konum adı:", "");
   if (name === null) return;
