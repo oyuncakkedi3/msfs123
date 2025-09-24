@@ -136,12 +136,9 @@ var cityMarkers = new Map();
 var cityData = new Map(); // id -> last data snapshot
 var routeLine = L.polyline([], { color: "#00B894", weight: 3, className: 'route-line' }).addTo(map);
 
-// Rota çizgisine tıklama eventi ekle
-routeLine.on('click', function(e) {
-  if (!isAdmin) return;
-  openFlightModal(e.latlng);
-});
+// Rota çizgisine tıklama eventi kaldırıldı - artık uçak sembollerine tıklanıyor
 var routeArrows = []; // small arrow markers along the route
+var routePlanes = []; // airplane markers along the route
 var metaDoc = db.collection("meta").doc("route");
 
 function cityDoc(id) { return db.collection("visited").doc(id); }
@@ -153,6 +150,19 @@ function buildIcon(color) {
     '<circle cx="12" cy="12" r="8" fill="' + color + '" stroke="#111" stroke-width="2" />' +
     "</svg>";
   return L.divIcon({ className: "city-icon", html: svg, iconSize: [24, 24], iconAnchor: [12, 12] });
+}
+
+function buildPlaneIcon(angle) {
+  var svg = 
+    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">' +
+    '<path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="#2c3e50"/>' +
+    '</svg>';
+  return L.divIcon({ 
+    className: "plane-icon", 
+    html: svg, 
+    iconSize: [20, 20], 
+    iconAnchor: [10, 10] 
+  });
 }
 
 function renderMarkerPopupHtml(id, data) {
@@ -173,23 +183,13 @@ function renderMarkerPopupHtml(id, data) {
     `<div>Kalkış: ${dep} • İniş: ${arr}</div>`
   ];
   if (notes) lines.push(`<div>Not: ${notes}</div>`);
-  if (isAdmin) lines.push(`<div style="margin-top:6px;"><button class="leaflet-edit-btn" data-edit-id="${id}">Şehir Düzenle</button></div>`);
+  // Düzenle butonu kaldırıldı - sadece bilgi gösterimi
   return lines.join('');
 }
 
 function bindMarkerPopup(marker, id, data) {
   marker.bindPopup(renderMarkerPopupHtml(id, data));
-  marker.off('popupopen');
-  marker.on('popupopen', function (e) {
-    var container = e.popup.getElement();
-    if (!container) return;
-    var btn = container.querySelector('.leaflet-edit-btn');
-    if (btn) {
-      btn.addEventListener('click', function () {
-        openVisitModal(id);
-      });
-    }
-  });
+  // Düzenle butonu kaldırıldığı için popup event handler'ı da kaldırıldı
 }
 
 function ensureOnMap(marker) {
@@ -215,10 +215,10 @@ function upsertMarker(id, data) {
     var m = cityMarkers.get(id);
     m.setLatLng([lat, lng]);
     m.setIcon(buildIcon(color));
-    m.bindTooltip(label);
+    m.bindTooltip(data.name || id, { permanent: false, direction: 'top' });
     bindMarkerPopup(m, id, data);
   } else {
-    var marker = L.marker([lat, lng], { icon: buildIcon(color) }).bindTooltip(label);
+    var marker = L.marker([lat, lng], { icon: buildIcon(color) }).bindTooltip(data.name || id, { permanent: false, direction: 'top' });
     bindMarkerPopup(marker, id, data);
 
 // Sol tık = ziyaret değiştir, Shift + Sol tık = SİL
@@ -253,25 +253,38 @@ function drawRoute(order) {
     if (m) pts.push(m.getLatLng());
   }
   routeLine.setLatLngs(pts);
-  // Clear old arrows
+  // Clear old arrows and planes
   routeArrows.forEach(function (a) { if (map.hasLayer(a)) map.removeLayer(a); });
   routeArrows = [];
-  // Add arrows every Nth segment
-  for (var i = 1; i < pts.length; i += 2) {
+  routePlanes.forEach(function (p) { if (map.hasLayer(p)) map.removeLayer(p); });
+  routePlanes = [];
+  
+  // Add airplane markers at the middle of each segment
+  for (var i = 1; i < pts.length; i++) {
     var a = pts[i - 1], b = pts[i];
     if (!a || !b) continue;
     var angle = Math.atan2(b.lat - a.lat, b.lng - a.lng) * 180 / Math.PI;
     var mid = L.latLng((a.lat + b.lat) / 2, (a.lng + b.lng) / 2);
-    var arrowHtml = '<svg class="route-arrow" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M2 12h14l-4-4m4 4-4 4" fill="none" stroke="#00B894" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    var icon = L.divIcon({ className: 'route-arrow-wrap', html: arrowHtml, iconSize: [16,16] });
-    var marker = L.marker(mid, { icon: icon, rotationAngle: angle });
-    // apply rotation via CSS transform on add
-    marker.on('add', function () {
-      var el = marker.getElement();
+    
+    // Create airplane marker
+    var planeIcon = buildPlaneIcon(angle);
+    var planeMarker = L.marker(mid, { icon: planeIcon });
+    
+    // Apply rotation via CSS transform
+    planeMarker.on('add', function () {
+      var el = planeMarker.getElement();
       if (el) el.style.transform = 'translate(-50%, -50%) rotate(' + angle + 'deg)';
     });
-    marker.addTo(map);
-    routeArrows.push(marker);
+    
+    // Add click event to airplane
+    planeMarker.on('click', function(e) {
+      if (!isAdmin) return;
+      e.originalEvent.stopPropagation(); // Prevent route line click
+      openFlightModal(mid);
+    });
+    
+    planeMarker.addTo(map);
+    routePlanes.push(planeMarker);
   }
   if (routeStatus) routeStatus.textContent = pts.length ? ("Rota noktası: " + pts.length) : "";
 }
