@@ -134,7 +134,7 @@ map.on('moveend', updateHashFromMap);
 // Şehir/rota
 var cityMarkers = new Map();
 var cityData = new Map(); // id -> last data snapshot
-var routeLine = L.polyline([], { color: "#00B894", weight: 3, className: 'route-line' }).addTo(map);
+var routeLine = L.polyline([], { color: "#1e40af", weight: 3, className: 'route-line' }).addTo(map);
 
 // Rota çizgisine tıklama eventi kaldırıldı - artık uçak sembollerine tıklanıyor
 var routeArrows = []; // small arrow markers along the route
@@ -154,14 +154,14 @@ function buildIcon(color) {
 
 function buildPlaneIcon(angle) {
   var svg = 
-    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">' +
-    '<path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="#2c3e50"/>' +
+    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">' +
+    '<path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="#1e40af" stroke="#fff" stroke-width="0.5"/>' +
     '</svg>';
   return L.divIcon({ 
     className: "plane-icon", 
     html: svg, 
-    iconSize: [20, 20], 
-    iconAnchor: [10, 10] 
+    iconSize: [24, 24], 
+    iconAnchor: [12, 12] 
   });
 }
 
@@ -188,8 +188,7 @@ function renderMarkerPopupHtml(id, data) {
 }
 
 function bindMarkerPopup(marker, id, data) {
-  marker.bindPopup(renderMarkerPopupHtml(id, data));
-  // Düzenle butonu kaldırıldığı için popup event handler'ı da kaldırıldı
+  // Popup'lar tamamen kaldırıldı - sadece tooltip kullanılıyor
 }
 
 function ensureOnMap(marker) {
@@ -268,12 +267,18 @@ function drawRoute(order) {
     
     // Create airplane marker
     var planeIcon = buildPlaneIcon(angle);
-    var planeMarker = L.marker(mid, { icon: planeIcon });
+    var planeMarker = L.marker(mid, { 
+      icon: planeIcon,
+      zIndexOffset: 1000
+    });
     
     // Apply rotation via CSS transform
     planeMarker.on('add', function () {
       var el = planeMarker.getElement();
-      if (el) el.style.transform = 'translate(-50%, -50%) rotate(' + angle + 'deg)';
+      if (el) {
+        el.style.transform = 'translate(-50%, -50%) rotate(' + angle + 'deg)';
+        el.style.zIndex = '1000';
+      }
     });
     
     // Add click event to airplane
