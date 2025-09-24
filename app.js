@@ -481,7 +481,10 @@ if (baseSelect) {
 // Rota paneli event listener'ları
 if (editRoutesBtn) {
   editRoutesBtn.addEventListener('click', function() {
-    if (!isAdmin) return;
+    if (!isAdmin) {
+      alert('Rota düzenlemek için admin olarak giriş yapmanız gerekiyor.');
+      return;
+    }
     routePanel.classList.remove('hidden');
     updateRouteList();
   });
