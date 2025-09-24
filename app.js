@@ -496,15 +496,6 @@ if (closeRoutePanel) {
   });
 }
 
-// Admin panelindeki rota düzenle butonu
-var editRoutesAdmin = document.getElementById("edit-routes-admin");
-if (editRoutesAdmin) {
-  editRoutesAdmin.addEventListener('click', function() {
-    routePanel.classList.remove('hidden');
-    updateRouteList();
-  });
-}
-
 function haversineNm(lat1, lon1, lat2, lon2) {
   function toRad(d){ return d * Math.PI / 180; }
   var Rkm = 6371;
