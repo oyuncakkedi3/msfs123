@@ -211,7 +211,7 @@ button { cursor: pointer; }
   z-index: 1001;
   min-width: 220px;
 }
-#stats { bottom: 12px; right: 12px; left: auto; transform: none; position: fixed; }
+#stats { bottom: 12px; left: 50%; transform: translateX(-50%); position: fixed; }
 .panel .title { font-weight: 700; margin-bottom: 6px; display:flex; align-items:center; justify-content:space-between; }
 .panel .row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; background: #f3f4f6; border-radius: 20px; }
