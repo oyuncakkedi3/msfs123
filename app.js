@@ -28,14 +28,11 @@ const searchInput = document.getElementById("search-city");
 const shareBtn = document.getElementById("share-link-btn");
 const baseSelect = document.getElementById('basemap-select');
 
-// Filtre/istatistik elemanları
-const filterQ = document.getElementById('filter-q');
+// İstatistik elemanları
 const statCount = document.getElementById('stat-count');
 const statVisited = document.getElementById('stat-visited');
 const statDuration = document.getElementById('stat-duration');
 const statDistance = document.getElementById('stat-distance');
-const filtersPanel = document.getElementById('filters');
-const filtersToggle = document.getElementById('filters-toggle');
 
 // Modal elemanları
 const visitModal = document.getElementById("visit-modal");
@@ -279,69 +276,28 @@ function refreshRoute() {
   });
 }
 
-function getFilterValues() {
-  var q = (filterQ && filterQ.value) ? filterQ.value.trim().toLowerCase() : '';
-  return { q };
-}
-
-function matchesFilters(data, filters) {
-  if (!filters) return true;
-  var q = filters.q;
-  if (!q) return true;
-  var parts = [
-    data.name,
-    data.aircraft,
-    data.weather,
-    data.depIcao || data.dep,
-    data.arrIcao || data.arr,
-    data.notes
-  ].map(function (v) { return (v ? String(v).toLowerCase() : ''); });
-  for (var i = 0; i < parts.length; i++) {
-    if (parts[i] && parts[i].indexOf(q) !== -1) return true;
-  }
-  return false;
-}
-
 function formatNumber(n) {
   return n.toLocaleString('tr-TR');
 }
 
-function applyFiltersAndStats() {
-  var f = getFilterValues();
+function updateStats() {
   var total = 0, totalVisited = 0, sumDur = 0, sumDist = 0;
 
   cityMarkers.forEach(function (marker, id) {
     var d = cityData.get(id) || {};
     total += 1;
     if (d.visited === true) totalVisited += 1;
-    var visible = matchesFilters(d, f);
-    if (visible) ensureOnMap(marker); else ensureOffMap(marker);
+    ensureOnMap(marker); // Tüm marker'ları göster
     var dur = (typeof d.durationMinutes === 'number') ? d.durationMinutes : (parseInt(d.duration, 10) || null);
     var dist = (typeof d.distanceNm === 'number') ? d.distanceNm : (parseInt(d.distance, 10) || null);
-    if (visible) {
-      if (dur) sumDur += dur;
-      if (dist) sumDist += dist;
-    }
+    if (dur) sumDur += dur;
+    if (dist) sumDist += dist;
   });
 
   if (statCount) statCount.textContent = 'Nokta: ' + formatNumber(total);
   if (statVisited) statVisited.textContent = 'Ziyaret: ' + formatNumber(totalVisited);
   if (statDuration) statDuration.textContent = 'Toplam süre: ' + formatNumber(sumDur) + ' dk';
   if (statDistance) statDistance.textContent = 'Toplam mesafe: ' + formatNumber(sumDist) + ' NM';
-}
-
-function wireFilterEvents() {
-  var inputs = [filterQ];
-  inputs.forEach(function (el) {
-    if (!el) return;
-    el.addEventListener('input', applyFiltersAndStats);
-  });
-  if (filtersToggle && filtersPanel) {
-    filtersToggle.addEventListener('click', function(){
-      var collapsed = filtersPanel.classList.toggle('collapsed');
-      filtersToggle.textContent = collapsed ? 'Göster' : 'Gizle';
-    });
-  }
 }
 
 // Firestore canlı dinleme
@@ -359,7 +315,7 @@ db.collection("visited").onSnapshot(function (snap) {
       upsertMarker(id, d);
     }
   });
-  applyFiltersAndStats();
+  updateStats();
   refreshRoute();
 });
 
@@ -620,6 +576,4 @@ if (visitModal) visitModal.addEventListener('click', function (e) { if (e.target
 if (visitSave) visitSave.addEventListener('click', saveVisitModal);
 
 // Filtre olaylarını bağla ve ilk hesaplama
-wireFilterEvents();
-applyFiltersAndStats();
-
+updateStats();
