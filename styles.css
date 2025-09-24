@@ -225,3 +225,24 @@ button { cursor: pointer; }
 /* Rota ok işareti için küçük ikon */
 .route-arrow { width: 16px; height: 16px; transform: translate(-50%, -50%) rotate(0deg); }
 
+/* Leaflet popup düzenle butonu */
+.leaflet-edit-btn {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background-color 0.15s ease;
+}
+
+.leaflet-edit-btn:hover {
+  background: #2f6bd1;
+}
+
+.leaflet-edit-btn:active {
+  background: #2f6bd1 !important;
+  color: #fff !important;
+}
