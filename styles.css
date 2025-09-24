@@ -211,17 +211,12 @@ button { cursor: pointer; }
   z-index: 1001;
   min-width: 220px;
 }
-#filters { bottom: 150px; }
 #stats { bottom: 12px; right: 12px; left: auto; transform: none; position: fixed; }
 .panel .title { font-weight: 700; margin-bottom: 6px; display:flex; align-items:center; justify-content:space-between; }
 .panel .row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; background: #f3f4f6; border-radius: 20px; }
 .panel .input { color: #111; background: #fff; border: 1px solid #ddd; margin-right: 0; height: 30px; }
 
-/* Filtre daraltma */
-#filters.collapsed .row { display: none; }
-#filters.collapsed { padding: 8px 10px; }
-#filters .toggle { font-size: 12px; background:#f3f4f6; border:1px solid #e5e7eb; padding: 4px 8px; border-radius: 6px; cursor:pointer; }
 
 /* Rota animasyonlu kesik çizgi */
 .leaflet-interactive.route-line { stroke-dasharray: 8 8; animation: route-dash 1.2s linear infinite; }
