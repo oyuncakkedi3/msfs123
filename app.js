@@ -138,7 +138,6 @@ var routeLine = L.polyline([], { color: "#1e40af", weight: 3, className: 'route-
 
 // Rota çizgisine tıklama eventi kaldırıldı - artık uçak sembollerine tıklanıyor
 var routeArrows = []; // small arrow markers along the route
-var routePlanes = []; // airplane markers along the route
 var metaDoc = db.collection("meta").doc("route");
 
 function cityDoc(id) { return db.collection("visited").doc(id); }
@@ -152,18 +151,7 @@ function buildIcon(color) {
   return L.divIcon({ className: "city-icon", html: svg, iconSize: [24, 24], iconAnchor: [12, 12] });
 }
 
-function buildPlaneIcon(angle) {
-  var svg = 
-    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">' +
-    '<path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="#1e40af" stroke="#fff" stroke-width="0.5"/>' +
-    '</svg>';
-  return L.divIcon({ 
-    className: "plane-icon", 
-    html: svg, 
-    iconSize: [24, 24], 
-    iconAnchor: [12, 12] 
-  });
-}
+// Uçak ikonu fonksiyonu kaldırıldı
 
 function renderMarkerPopupHtml(id, data) {
   var name = data.name || id;
@@ -189,6 +177,8 @@ function renderMarkerPopupHtml(id, data) {
 
 function bindMarkerPopup(marker, id, data) {
   // Popup'lar tamamen kaldırıldı - sadece tooltip kullanılıyor
+  // Marker'a popup bind etmeyi tamamen engelle
+  marker.unbindPopup();
 }
 
 function ensureOnMap(marker) {
@@ -220,6 +210,7 @@ function upsertMarker(id, data) {
     var marker = L.marker([lat, lng], { icon: buildIcon(color) }).bindTooltip(data.name || id, { permanent: false, direction: 'top' });
     bindMarkerPopup(marker, id, data);
 
+// Marker tıklama eventleri kaldırıldı - sadece görsel
 // Sol tık = ziyaret değiştir, Shift + Sol tık = SİL
 marker.on("click", function (e) {
   if (!isAdmin) return;
@@ -252,45 +243,11 @@ function drawRoute(order) {
     if (m) pts.push(m.getLatLng());
   }
   routeLine.setLatLngs(pts);
-  // Clear old arrows and planes
+  // Clear old arrows
   routeArrows.forEach(function (a) { if (map.hasLayer(a)) map.removeLayer(a); });
   routeArrows = [];
-  routePlanes.forEach(function (p) { if (map.hasLayer(p)) map.removeLayer(p); });
-  routePlanes = [];
   
-  // Add airplane markers at the middle of each segment
-  for (var i = 1; i < pts.length; i++) {
-    var a = pts[i - 1], b = pts[i];
-    if (!a || !b) continue;
-    var angle = Math.atan2(b.lat - a.lat, b.lng - a.lng) * 180 / Math.PI;
-    var mid = L.latLng((a.lat + b.lat) / 2, (a.lng + b.lng) / 2);
-    
-    // Create airplane marker
-    var planeIcon = buildPlaneIcon(angle);
-    var planeMarker = L.marker(mid, { 
-      icon: planeIcon,
-      zIndexOffset: 1000
-    });
-    
-    // Apply rotation via CSS transform
-    planeMarker.on('add', function () {
-      var el = planeMarker.getElement();
-      if (el) {
-        el.style.transform = 'translate(-50%, -50%) rotate(' + angle + 'deg)';
-        el.style.zIndex = '1000';
-      }
-    });
-    
-    // Add click event to airplane
-    planeMarker.on('click', function(e) {
-      if (!isAdmin) return;
-      e.originalEvent.stopPropagation(); // Prevent route line click
-      openFlightModal(mid);
-    });
-    
-    planeMarker.addTo(map);
-    routePlanes.push(planeMarker);
-  }
+  // Uçak sembolleri kaldırıldı - sadece rota çizgisi
   if (routeStatus) routeStatus.textContent = pts.length ? ("Rota noktası: " + pts.length) : "";
 }
 
