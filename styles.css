@@ -51,6 +51,7 @@ button { cursor: pointer; }
 
 /* Modern butonlar */
 .right button { margin-left: 8px; }
+#edit-routes-btn { display: inline-flex !important; }
 .btn {
   display: inline-flex;
   align-items: center;
