@@ -37,7 +37,8 @@ const statDistance = document.getElementById('stat-distance');
 // Modal elemanları
 const visitModal = document.getElementById("visit-modal");
 const visitModalClose = document.getElementById("visit-modal-close");
-const visitName = document.getElementById("visit-name");
+const visitDepCity = document.getElementById("visit-dep-city");
+const visitArrCity = document.getElementById("visit-arr-city");
 const visitAircraft = document.getElementById("visit-aircraft");
 const visitDuration = document.getElementById("visit-duration");
 const visitDistance = document.getElementById("visit-distance");
@@ -134,6 +135,12 @@ map.on('moveend', updateHashFromMap);
 var cityMarkers = new Map();
 var cityData = new Map(); // id -> last data snapshot
 var routeLine = L.polyline([], { color: "#00B894", weight: 3, className: 'route-line' }).addTo(map);
+
+// Rota çizgisine tıklama eventi ekle
+routeLine.on('click', function(e) {
+  if (!isAdmin) return;
+  openFlightModal(e.latlng);
+});
 var routeArrows = []; // small arrow markers along the route
 var metaDoc = db.collection("meta").doc("route");
 
@@ -166,7 +173,7 @@ function renderMarkerPopupHtml(id, data) {
     `<div>Kalkış: ${dep} • İniş: ${arr}</div>`
   ];
   if (notes) lines.push(`<div>Not: ${notes}</div>`);
-  if (isAdmin) lines.push(`<div style="margin-top:6px;"><button class="leaflet-edit-btn" data-edit-id="${id}">Düzenle</button></div>`);
+  if (isAdmin) lines.push(`<div style="margin-top:6px;"><button class="leaflet-edit-btn" data-edit-id="${id}">Şehir Düzenle</button></div>`);
   return lines.join('');
 }
 
@@ -231,7 +238,7 @@ marker.on("contextmenu", function (e) {
   if (confirm("Bu noktayı tamamen sil?")) deleteCity(id);
 });
 
-// Çift tık = düzenle (sadece admin)
+// Çift tık = düzenle (sadece admin) - şehir detayları
 marker.on("dblclick", function () { if (isAdmin) openVisitModal(id); });
 
     cityMarkers.set(id, marker);
@@ -504,11 +511,70 @@ function haversineNm(lat1, lon1, lat2, lon2) {
 }
 
 // Modal yardımcıları
+function openFlightModal(clickLatLng) {
+  currentEditId = null; // Rota segmenti için ID yok
+  currentClickLatLng = clickLatLng;
+  
+  // Form alanlarını temizle
+  if (visitDepCity) visitDepCity.value = '';
+  if (visitArrCity) visitArrCity.value = '';
+  if (visitAircraft) visitAircraft.value = '';
+  if (visitDuration) visitDuration.value = '';
+  if (visitDistance) visitDistance.value = '';
+  if (visitWeather) visitWeather.value = '';
+  if (visitDep) visitDep.value = '';
+  if (visitArr) visitArr.value = '';
+  if (visitNotes) visitNotes.value = '';
+  
+  // Otomatik mesafe hesapla (tıklanan noktaya en yakın iki şehir arası)
+  var nearestCities = findNearestCities(clickLatLng);
+  if (nearestCities.length >= 2) {
+    var city1 = nearestCities[0];
+    var city2 = nearestCities[1];
+    if (visitDepCity) visitDepCity.value = city1.name || city1.id;
+    if (visitArrCity) visitArrCity.value = city2.name || city2.id;
+    if (visitDep) visitDep.value = city1.depIcao || city1.dep || '';
+    if (visitArr) visitArr.value = city2.arrIcao || city2.arr || '';
+    
+    // Mesafe hesapla
+    var distance = haversineNm(city1.lat, city1.lng, city2.lat, city2.lng);
+    if (visitDistance) visitDistance.value = Math.round(distance);
+  }
+  
+  if (visitModal) visitModal.classList.remove('hidden');
+}
+
+function findNearestCities(clickLatLng) {
+  var cities = [];
+  cityMarkers.forEach(function(marker, id) {
+    var data = cityData.get(id);
+    if (data) {
+      var distance = haversineNm(clickLatLng.lat, clickLatLng.lng, data.lat, data.lng);
+      cities.push({
+        id: id,
+        name: data.name,
+        lat: data.lat,
+        lng: data.lng,
+        depIcao: data.depIcao,
+        dep: data.dep,
+        arrIcao: data.arrIcao,
+        arr: data.arr,
+        distance: distance
+      });
+    }
+  });
+  
+  // Mesafeye göre sırala ve en yakın 2 şehri döndür
+  cities.sort(function(a, b) { return a.distance - b.distance; });
+  return cities.slice(0, 2);
+}
+
 function openVisitModal(id) {
   currentEditId = id;
   cityDoc(id).get().then(function (doc) {
     var d = doc.exists ? doc.data() : {};
-    if (visitName) visitName.value = (d.name || id);
+    if (visitDepCity) visitDepCity.value = (d.name || id);
+    if (visitArrCity) visitArrCity.value = '';
     if (visitAircraft) visitAircraft.value = d.aircraft || '';
     if (visitDuration) visitDuration.value = (typeof d.durationMinutes === 'number') ? d.durationMinutes : (parseInt(d.duration, 10) || '');
     if (visitDistance) visitDistance.value = (typeof d.distanceNm === 'number') ? d.distanceNm : (parseInt(d.distance, 10) || '');
@@ -524,9 +590,9 @@ function closeVisitModal() {
   currentEditId = null;
 }
 function saveVisitModal() {
-  if (!currentEditId) return;
   var payload = {
-    name: (visitName && visitName.value) ? visitName.value.trim() : currentEditId,
+    depCity: visitDepCity ? visitDepCity.value.trim() : '',
+    arrCity: visitArrCity ? visitArrCity.value.trim() : '',
     aircraft: visitAircraft ? visitAircraft.value.trim() : '',
     durationMinutes: visitDuration && visitDuration.value !== '' ? parseInt(visitDuration.value, 10) : null,
     distanceNm: visitDistance && visitDistance.value !== '' ? parseInt(visitDistance.value, 10) : null,
@@ -536,6 +602,28 @@ function saveVisitModal() {
     notes: visitNotes ? visitNotes.value.trim() : '',
     updatedAt: Date.now()
   };
+  
+  // Eğer rota segmenti için kaydediliyorsa (currentEditId null ise)
+  if (!currentEditId) {
+    // Rota segmenti verilerini localStorage'a kaydet veya ayrı bir collection'a
+    var flightId = 'flight_' + Date.now();
+    var flightData = {
+      ...payload,
+      clickLatLng: currentClickLatLng,
+      id: flightId
+    };
+    
+    // Basit bir şekilde localStorage'a kaydet (veya Firebase'e ayrı collection olarak)
+    var flights = JSON.parse(localStorage.getItem('flightSegments') || '[]');
+    flights.push(flightData);
+    localStorage.setItem('flightSegments', JSON.stringify(flights));
+    
+    closeVisitModal();
+    return;
+  }
+  
+  // Mevcut şehir düzenleme mantığı
+  payload.name = payload.depCity || currentEditId;
   if (payload.durationMinutes !== null && (!isFinite(payload.durationMinutes) || payload.durationMinutes < 0)) {
     alert('Süre geçersiz.');
     return;
