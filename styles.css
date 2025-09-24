@@ -218,13 +218,15 @@ button { cursor: pointer; }
 .panel .input { color: #111; background: #fff; border: 1px solid #ddd; margin-right: 0; height: 30px; }
 
 
-/* Rota animasyonlu kesik çizgi */
+/* Havayolu tarzı rota çizgisi */
 .leaflet-interactive.route-line { 
-  stroke-dasharray: 8 8; 
-  animation: route-dash 1.2s linear infinite; 
-  stroke-width: 4;
+  stroke: #1e40af;
+  stroke-width: 3;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
 }
-@keyframes route-dash { to { stroke-dashoffset: -16; } }
 
 /* Rota ok işareti için küçük ikon */
 .route-arrow { width: 16px; height: 16px; transform: translate(-50%, -50%) rotate(0deg); }
@@ -232,10 +234,22 @@ button { cursor: pointer; }
 /* Uçak ikonu */
 .plane-icon {
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, filter 0.2s ease;
+  z-index: 1000 !important;
+  pointer-events: auto;
+  position: relative;
 }
 .plane-icon:hover {
-  transform: translate(-50%, -50%) scale(1.2) !important;
+  transform: translate(-50%, -50%) scale(1.15) !important;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));
+  z-index: 1001 !important;
+}
+.plane-icon svg {
+  transition: fill 0.2s ease;
+  pointer-events: none;
+}
+.plane-icon:hover svg {
+  fill: #3b82f6 !important;
 }
 
 /* Leaflet popup düzenle butonu */
