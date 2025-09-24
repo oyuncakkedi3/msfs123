@@ -72,29 +72,33 @@
     <div class="modal-backdrop" data-close="modal"></div>
     <div class="modal-content" role="dialog" aria-modal="true">
       <div class="modal-header">
-        <h3 id="visit-modal-title">Ziyaret Detayları</h3>
+        <h3 id="visit-modal-title">Uçuş Detayları</h3>
         <button class="modal-close" id="visit-modal-close" aria-label="Kapat">✕</button>
       </div>
       <div class="modal-body">
         <div class="form-grid">
           <label>
-            Şehir/konum adı
-            <input id="visit-name" type="text" class="input" />
+            Kalkış Şehri
+            <input id="visit-dep-city" type="text" class="input" />
+          </label>
+          <label>
+            İniş Şehri
+            <input id="visit-arr-city" type="text" class="input" />
           </label>
           <label>
             Uçak (örn: A320neo)
             <input id="visit-aircraft" type="text" class="input" />
           </label>
           <label>
-            Süre (dakika)
+            Uçuş Süresi (dakika)
             <input id="visit-duration" type="number" min="0" step="1" class="input" />
           </label>
           <label>
-            Mesafe (NM)
+            Uçuş Mesafesi (NM)
             <input id="visit-distance" type="number" min="0" step="1" class="input" />
           </label>
           <label>
-            Hava durumu
+            Uçuş Hava Durumu
             <input id="visit-weather" type="text" class="input" placeholder="CAVOK, yağmurlu..." />
           </label>
           <label>
@@ -106,8 +110,8 @@
             <input id="visit-arr" type="text" class="input" placeholder="LTBA" />
           </label>
           <label class="wide">
-            Notlar
-            <textarea id="visit-notes" class="textarea" rows="3"></textarea>
+            Uçuş Notları
+            <textarea id="visit-notes" class="textarea" rows="3" placeholder="Uçuş hakkında notlar..."></textarea>
           </label>
         </div>
       </div>
