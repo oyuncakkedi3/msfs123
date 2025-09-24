@@ -134,9 +134,13 @@ map.on('moveend', updateHashFromMap);
 // Şehir/rota
 var cityMarkers = new Map();
 var cityData = new Map(); // id -> last data snapshot
-var routeLine = L.polyline([], { color: "#1e40af", weight: 3, className: 'route-line' }).addTo(map);
+var routeLine = L.polyline([], { color: "#1e40af", weight: 5, className: 'route-line' }).addTo(map);
 
-// Rota çizgisine tıklama eventi kaldırıldı - artık uçak sembollerine tıklanıyor
+// Rota çizgisine tıklama eventi
+routeLine.on('click', function(e) {
+  if (!isAdmin) return;
+  openFlightModal(e.latlng);
+});
 var routeArrows = []; // small arrow markers along the route
 var metaDoc = db.collection("meta").doc("route");
 
@@ -151,7 +155,7 @@ function buildIcon(color) {
   return L.divIcon({ className: "city-icon", html: svg, iconSize: [24, 24], iconAnchor: [12, 12] });
 }
 
-// Uçak ikonu fonksiyonu kaldırıldı
+// Pilot ikonu fonksiyonu kaldırıldı
 
 function renderMarkerPopupHtml(id, data) {
   var name = data.name || id;
@@ -247,7 +251,7 @@ function drawRoute(order) {
   routeArrows.forEach(function (a) { if (map.hasLayer(a)) map.removeLayer(a); });
   routeArrows = [];
   
-  // Uçak sembolleri kaldırıldı - sadece rota çizgisi
+  // Pilot şapkası sembolleri kaldırıldı - sadece rota çizgisi
   if (routeStatus) routeStatus.textContent = pts.length ? ("Rota noktası: " + pts.length) : "";
 }
 
@@ -542,6 +546,66 @@ function findNearestCities(clickLatLng) {
   // Mesafeye göre sırala ve en yakın 2 şehri döndür
   cities.sort(function(a, b) { return a.distance - b.distance; });
   return cities.slice(0, 2);
+}
+
+// Hover için bilgi gösterme fonksiyonları
+function showFlightInfo(latLng, event) {
+  var nearestCities = findNearestCities(latLng);
+  if (nearestCities.length < 2) return;
+  
+  var city1 = nearestCities[0];
+  var city2 = nearestCities[1];
+  var distance = haversineNm(city1.lat, city1.lng, city2.lat, city2.lng);
+  
+  // localStorage'dan uçuş bilgilerini al
+  var flights = JSON.parse(localStorage.getItem('flightSegments') || '[]');
+  var flightInfo = flights.find(function(f) {
+    return Math.abs(f.clickLatLng.lat - latLng.lat) < 0.001 && 
+           Math.abs(f.clickLatLng.lng - latLng.lng) < 0.001;
+  });
+  
+  var info = flightInfo ? {
+    aircraft: flightInfo.aircraft || '-',
+    duration: flightInfo.durationMinutes ? flightInfo.durationMinutes + ' dk' : '-',
+    distance: flightInfo.distanceNm ? flightInfo.distanceNm + ' NM' : Math.round(distance) + ' NM',
+    weather: flightInfo.weather || '-',
+    dep: flightInfo.depIcao || '-',
+    arr: flightInfo.arrIcao || '-'
+  } : {
+    aircraft: '-',
+    duration: '-',
+    distance: Math.round(distance) + ' NM',
+    weather: '-',
+    dep: '-',
+    arr: '-'
+  };
+  
+  // Tooltip oluştur
+  var tooltip = L.tooltip({
+    content: `
+      <div style="font-size: 12px; line-height: 1.4;">
+        <div><strong>${city1.name} → ${city2.name}</strong></div>
+        <div>Uçak: ${info.aircraft}</div>
+        <div>Süre: ${info.duration}</div>
+        <div>Mesafe: ${info.distance}</div>
+        <div>Hava: ${info.weather}</div>
+        <div>Kalkış: ${info.dep} • İniş: ${info.arr}</div>
+      </div>
+    `,
+    permanent: false,
+    direction: 'top',
+    offset: [0, -10]
+  });
+  
+  tooltip.setLatLng(latLng).addTo(map);
+  window.currentTooltip = tooltip;
+}
+
+function hideFlightInfo() {
+  if (window.currentTooltip) {
+    map.removeLayer(window.currentTooltip);
+    window.currentTooltip = null;
+  }
 }
 
 function openVisitModal(id) {
