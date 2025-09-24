@@ -231,26 +231,7 @@ button { cursor: pointer; }
 /* Rota ok işareti için küçük ikon */
 .route-arrow { width: 16px; height: 16px; transform: translate(-50%, -50%) rotate(0deg); }
 
-/* Uçak ikonu */
-.plane-icon {
-  cursor: pointer;
-  transition: transform 0.2s ease, filter 0.2s ease;
-  z-index: 1000 !important;
-  pointer-events: auto;
-  position: relative;
-}
-.plane-icon:hover {
-  transform: translate(-50%, -50%) scale(1.15) !important;
-  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));
-  z-index: 1001 !important;
-}
-.plane-icon svg {
-  transition: fill 0.2s ease;
-  pointer-events: none;
-}
-.plane-icon:hover svg {
-  fill: #3b82f6 !important;
-}
+/* Uçak ikonu stilleri kaldırıldı */
 
 /* Leaflet popup düzenle butonu */
 .leaflet-edit-btn {
