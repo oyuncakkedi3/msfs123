@@ -27,6 +27,10 @@ const resetViewBtn = document.getElementById("reset-view-btn");
 const searchInput = document.getElementById("search-city");
 const shareBtn = document.getElementById("share-link-btn");
 const baseSelect = document.getElementById('basemap-select');
+const editRoutesBtn = document.getElementById("edit-routes-btn");
+const routePanel = document.getElementById("route-panel");
+const closeRoutePanel = document.getElementById("close-route-panel");
+const routeList = document.getElementById("route-list");
 
 // İstatistik elemanları
 const statCount = document.getElementById('stat-count');
@@ -136,11 +140,7 @@ var cityMarkers = new Map();
 var cityData = new Map(); // id -> last data snapshot
 var routeLine = L.polyline([], { color: "#1e40af", weight: 5, className: 'route-line' }).addTo(map);
 
-// Rota çizgisine tıklama eventi
-routeLine.on('click', function(e) {
-  if (!isAdmin) return;
-  openFlightModal(e.latlng);
-});
+// Rota çizgisi tıklama eventi kaldırıldı - artık rota paneli kullanılıyor
 var routeArrows = []; // small arrow markers along the route
 var metaDoc = db.collection("meta").doc("route");
 
@@ -478,6 +478,21 @@ if (baseSelect) {
   });
 }
 
+// Rota paneli event listener'ları
+if (editRoutesBtn) {
+  editRoutesBtn.addEventListener('click', function() {
+    if (!isAdmin) return;
+    routePanel.classList.remove('hidden');
+    updateRouteList();
+  });
+}
+
+if (closeRoutePanel) {
+  closeRoutePanel.addEventListener('click', function() {
+    routePanel.classList.add('hidden');
+  });
+}
+
 function haversineNm(lat1, lon1, lat2, lon2) {
   function toRad(d){ return d * Math.PI / 180; }
   var Rkm = 6371;
@@ -608,6 +623,79 @@ function hideFlightInfo() {
   }
 }
 
+// Rota listesini güncelle
+function updateRouteList() {
+  if (!routeList) return;
+  
+  var flights = JSON.parse(localStorage.getItem('flightSegments') || '[]');
+  
+  if (flights.length === 0) {
+    routeList.innerHTML = '<div class="empty-routes">Henüz uçuş rotası eklenmemiş</div>';
+    return;
+  }
+  
+  var html = '';
+  flights.forEach(function(flight, index) {
+    var nearestCities = findNearestCities(flight.clickLatLng);
+    var city1 = nearestCities[0] || { name: 'Bilinmeyen' };
+    var city2 = nearestCities[1] || { name: 'Bilinmeyen' };
+    
+    html += `
+      <div class="route-item">
+        <div class="route-info">
+          <div class="route-route">${city1.name} → ${city2.name}</div>
+          <div class="route-details">
+            ${flight.aircraft || '-'} • ${flight.durationMinutes ? flight.durationMinutes + 'dk' : '-'} • ${flight.distanceNm ? flight.distanceNm + 'NM' : '-'}
+          </div>
+        </div>
+        <div class="route-actions">
+          <button class="route-btn edit" onclick="editRouteSegment(${index})">Düzenle</button>
+          <button class="route-btn delete" onclick="deleteRouteSegment(${index})">Sil</button>
+        </div>
+      </div>
+    `;
+  });
+  
+  routeList.innerHTML = html;
+}
+
+// Rota segmentini düzenle
+function editRouteSegment(index) {
+  var flights = JSON.parse(localStorage.getItem('flightSegments') || '[]');
+  if (flights[index]) {
+    currentEditId = null;
+    currentClickLatLng = flights[index].clickLatLng;
+    
+    // Form alanlarını doldur
+    if (visitDepCity) visitDepCity.value = flights[index].depCity || '';
+    if (visitArrCity) visitArrCity.value = flights[index].arrCity || '';
+    if (visitAircraft) visitAircraft.value = flights[index].aircraft || '';
+    if (visitDuration) visitDuration.value = flights[index].durationMinutes || '';
+    if (visitDistance) visitDistance.value = flights[index].distanceNm || '';
+    if (visitWeather) visitWeather.value = flights[index].weather || '';
+    if (visitDep) visitDep.value = flights[index].depIcao || '';
+    if (visitArr) visitArr.value = flights[index].arrIcao || '';
+    if (visitNotes) visitNotes.value = flights[index].notes || '';
+    
+    // Modal'ı aç
+    if (visitModal) visitModal.classList.remove('hidden');
+    
+    // Rota panelini kapat
+    if (routePanel) routePanel.classList.add('hidden');
+  }
+}
+
+// Rota segmentini sil
+function deleteRouteSegment(index) {
+  if (!confirm('Bu uçuş segmentini silmek istediğinizden emin misiniz?')) return;
+  
+  var flights = JSON.parse(localStorage.getItem('flightSegments') || '[]');
+  flights.splice(index, 1);
+  localStorage.setItem('flightSegments', JSON.stringify(flights));
+  
+  updateRouteList();
+}
+
 function openVisitModal(id) {
   currentEditId = id;
   cityDoc(id).get().then(function (doc) {
@@ -656,6 +744,9 @@ function saveVisitModal() {
     var flights = JSON.parse(localStorage.getItem('flightSegments') || '[]');
     flights.push(flightData);
     localStorage.setItem('flightSegments', JSON.stringify(flights));
+    
+    // Rota listesini güncelle
+    updateRouteList();
     
     closeVisitModal();
     return;
