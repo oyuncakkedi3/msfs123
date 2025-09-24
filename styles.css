@@ -219,7 +219,16 @@ button { cursor: pointer; }
 
 
 /* Rota animasyonlu kesik çizgi */
-.leaflet-interactive.route-line { stroke-dasharray: 8 8; animation: route-dash 1.2s linear infinite; }
+.leaflet-interactive.route-line { 
+  stroke-dasharray: 8 8; 
+  animation: route-dash 1.2s linear infinite; 
+  stroke-width: 6;
+  cursor: pointer;
+}
+.leaflet-interactive.route-line:hover { 
+  stroke-width: 8; 
+  stroke: #00A085;
+}
 @keyframes route-dash { to { stroke-dashoffset: -16; } }
 
 /* Rota ok işareti için küçük ikon */
