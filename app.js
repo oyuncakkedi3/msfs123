@@ -140,7 +140,7 @@ var cityMarkers = new Map();
 var cityData = new Map(); // id -> last data snapshot
 var routeLine = L.polyline([], { color: "#1e40af", weight: 8, className: 'route-line' }).addTo(map);
 
-// Rota çizgisine CTRL + tıklama eventi
+// Rota çizgisine CTRL + tıklama eventi (admin için)
 routeLine.on('click', function(e) {
   if (!isAdmin) return;
   
@@ -149,6 +149,17 @@ routeLine.on('click', function(e) {
   
   e.originalEvent.stopPropagation(); // Harita tıklama eventini engelle
   openFlightModal(e.latlng);
+});
+
+// Rota çizgisine hover eventi (seyirciler için)
+routeLine.on('mouseover', function(e) {
+  if (isAdmin) return; // Admin'ler için hover'a gerek yok
+  showFlightInfo(e.latlng, e.originalEvent);
+});
+
+routeLine.on('mouseout', function(e) {
+  if (isAdmin) return;
+  hideFlightInfo();
 });
 var routeArrows = []; // small arrow markers along the route
 var metaDoc = db.collection("meta").doc("route");
@@ -587,8 +598,8 @@ function showFlightInfo(latLng, event) {
   // localStorage'dan uçuş bilgilerini al
   var flights = JSON.parse(localStorage.getItem('flightSegments') || '[]');
   var flightInfo = flights.find(function(f) {
-    return Math.abs(f.clickLatLng.lat - latLng.lat) < 0.001 && 
-           Math.abs(f.clickLatLng.lng - latLng.lng) < 0.001;
+    return Math.abs(f.clickLatLng.lat - latLng.lat) < 0.01 && 
+           Math.abs(f.clickLatLng.lng - latLng.lng) < 0.01;
   });
   
   var info = flightInfo ? {
@@ -610,18 +621,19 @@ function showFlightInfo(latLng, event) {
   // Tooltip oluştur
   var tooltip = L.tooltip({
     content: `
-      <div style="font-size: 12px; line-height: 1.4;">
-        <div><strong>${city1.name} → ${city2.name}</strong></div>
-        <div>Uçak: ${info.aircraft}</div>
-        <div>Süre: ${info.duration}</div>
-        <div>Mesafe: ${info.distance}</div>
-        <div>Hava: ${info.weather}</div>
-        <div>Kalkış: ${info.dep} • İniş: ${info.arr}</div>
+      <div style="font-size: 12px; line-height: 1.4; min-width: 200px;">
+        <div style="font-weight: bold; margin-bottom: 4px; color: #1e40af;">${city1.name} → ${city2.name}</div>
+        <div style="margin-bottom: 2px;">✈️ Uçak: ${info.aircraft}</div>
+        <div style="margin-bottom: 2px;">⏱️ Süre: ${info.duration}</div>
+        <div style="margin-bottom: 2px;">📏 Mesafe: ${info.distance}</div>
+        <div style="margin-bottom: 2px;">🌤️ Hava: ${info.weather}</div>
+        <div style="margin-bottom: 2px;">🛫 Kalkış: ${info.dep} • 🛬 İniş: ${info.arr}</div>
       </div>
     `,
     permanent: false,
     direction: 'top',
-    offset: [0, -10]
+    offset: [0, -15],
+    className: 'flight-tooltip'
   });
   
   tooltip.setLatLng(latLng).addTo(map);
