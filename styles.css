@@ -222,16 +222,17 @@ button { cursor: pointer; }
 /* Havayolu tarzı rota çizgisi */
 .leaflet-interactive.route-line { 
   stroke: #1e40af;
-  stroke-width: 8;
+  stroke-width: 16;
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
   cursor: pointer;
+  pointer-events: all !important;
 }
 .leaflet-interactive.route-line:hover { 
   stroke: #3b82f6;
-  stroke-width: 10;
+  stroke-width: 18;
 }
 
 /* Rota ok işareti için küçük ikon */
