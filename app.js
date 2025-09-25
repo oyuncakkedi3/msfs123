@@ -160,12 +160,12 @@ routeLine.on('click', function(e) {
 
 // Rota çizgisine hover eventi (seyirciler için)
 routeLine.on('mouseover', function(e) {
-  if (isAdmin) return; // Admin'ler için hover'a gerek yok
+  // Admin'ler için de hover çalışsın
   showFlightInfo(e.latlng, e.originalEvent);
 });
 
 routeLine.on('mouseout', function(e) {
-  if (isAdmin) return;
+  // Herkes için hover gizlensin
   hideFlightInfo();
 });
 var routeArrows = []; // small arrow markers along the route
@@ -606,7 +606,10 @@ function openFlightModal(clickLatLng) {
     if (visitDistance) visitDistance.value = Math.round(distance);
   }
   
-  if (visitModal) visitModal.classList.remove('hidden');
+  if (visitModal) {
+    visitModal.classList.remove('hidden');
+    visitModal.removeAttribute('aria-hidden'); // aria-hidden kaldır
+  }
 }
 
 function findNearestCities(clickLatLng) {
@@ -636,13 +639,8 @@ function findNearestCities(clickLatLng) {
 
 // Hover için bilgi gösterme fonksiyonları
 function showFlightInfo(latLng, event) {
-  console.log('showFlightInfo çağrıldı:', latLng);
-  
   var nearestCities = findNearestCities(latLng);
-  if (nearestCities.length < 2) {
-    console.log('Yeterli şehir bulunamadı:', nearestCities.length);
-    return;
-  }
+  if (nearestCities.length < 2) return;
   
   var city1 = nearestCities[0];
   var city2 = nearestCities[1];
@@ -650,8 +648,6 @@ function showFlightInfo(latLng, event) {
   
   // localStorage'dan uçuş bilgilerini al - daha geniş toleransla
   var flights = JSON.parse(localStorage.getItem('flightSegments') || '[]');
-  console.log('localStorage flights:', flights);
-  
   var flightInfo = null;
   
   // En yakın uçuş segmentini bul
@@ -660,7 +656,6 @@ function showFlightInfo(latLng, event) {
     var flightDistance = haversineNm(latLng.lat, latLng.lng, flight.clickLatLng.lat, flight.clickLatLng.lng);
     if (flightDistance < 0.5) { // 0.5 NM içinde ise
       flightInfo = flight;
-      console.log('Uçuş bilgisi bulundu:', flightInfo);
       break;
     }
   }
@@ -680,8 +675,6 @@ function showFlightInfo(latLng, event) {
     dep: '-',
     arr: '-'
   };
-  
-  console.log('Gösterilecek bilgi:', info);
   
   // Tooltip oluştur
   var tooltip = L.tooltip({
@@ -703,7 +696,6 @@ function showFlightInfo(latLng, event) {
   
   tooltip.setLatLng(latLng).addTo(map);
   window.currentTooltip = tooltip;
-  console.log('Tooltip eklendi');
 }
 
 function hideFlightInfo() {
