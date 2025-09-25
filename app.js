@@ -46,7 +46,6 @@ const visitArrCity = document.getElementById("visit-arr-city");
 const visitAircraft = document.getElementById("visit-aircraft");
 const visitDuration = document.getElementById("visit-duration");
 const visitDistance = document.getElementById("visit-distance");
-const visitWeather = document.getElementById("visit-weather");
 const visitDep = document.getElementById("visit-dep");
 const visitArr = document.getElementById("visit-arr");
 const visitNotes = document.getElementById("visit-notes");
