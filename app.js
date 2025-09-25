@@ -111,86 +111,6 @@ function parseHashView() {
 var initialView = parseHashView() || defaultView;
 var map = L.map("map", { worldCopyJump: true }).setView(initialView.center, initialView.zoom);
 
-// Hava durumu radar katmanları - API KEY EKLENDİ
-var weatherLayers = {
-  precipitation: L.tileLayer('https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=4f8b5c8e9a2d1b3c4e5f6a7b8c9d0e1f', {
-    attribution: '&copy; OpenWeatherMap',
-    opacity: 0.6,
-    name: 'Yağış Radarı'
-  }),
-  clouds: L.tileLayer('https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid=4f8b5c8e9a2d1b3c4e5f6a7b8c9d0e1f', {
-    attribution: '&copy; OpenWeatherMap',
-    opacity: 0.5,
-    name: 'Bulut Haritası'
-  }),
-  temperature: L.tileLayer('https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=4f8b5c8e9a2d1b3c4e5f6a7b8c9d0e1f', {
-    attribution: '&copy; OpenWeatherMap',
-    opacity: 0.6,
-    name: 'Sıcaklık Haritası'
-  }),
-  wind: L.tileLayer('https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=4f8b5c8e9a2d1b3c4e5f6a7b8c9d0e1f', {
-    attribution: '&copy; OpenWeatherMap',
-    opacity: 0.6,
-    name: 'Rüzgar Haritası'
-  })
-};
-
-// Hava durumu kontrol fonksiyonları
-function toggleWeatherLayer(layerName) {
-  if (weatherLayers[layerName]) {
-    if (map.hasLayer(weatherLayers[layerName])) {
-      map.removeLayer(weatherLayers[layerName]);
-      console.log('Hava durumu katmanı kaldırıldı:', layerName);
-    } else {
-      weatherLayers[layerName].addTo(map);
-      console.log('Hava durumu katmanı eklendi:', layerName);
-    }
-  } else {
-    console.log('Katman bulunamadı:', layerName);
-  }
-}
-
-function createWeatherPanel() {
-  if (weatherPanel) {
-    console.log('Panel zaten var, kaldırılıyor');
-    map.removeControl(weatherPanel);
-    weatherPanel = null;
-    return;
-  }
-  
-  console.log('Hava durumu paneli oluşturuluyor');
-  weatherPanel = L.control({position: 'topright'});
-  weatherPanel.onAdd = function(map) {
-    var div = L.DomUtil.create('div', 'weather-panel');
-    div.innerHTML = `
-      <div style="background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); min-width: 200px;">
-        <h4 style="margin: 0 0 10px 0; color: #333;">🌤️ Hava Durumu</h4>
-        <div style="display: flex; flex-direction: column; gap: 5px;">
-          <button onclick="toggleWeatherLayer('precipitation')" class="weather-btn">🌧️ Yağış Radarı</button>
-          <button onclick="toggleWeatherLayer('clouds')" class="weather-btn">☁️ Bulut Haritası</button>
-          <button onclick="toggleWeatherLayer('temperature')" class="weather-btn">🌡️ Sıcaklık</button>
-          <button onclick="toggleWeatherLayer('wind')" class="weather-btn">💨 Rüzgar</button>
-        </div>
-        <div style="margin-top: 10px; font-size: 11px; color: #28a745;">
-          ✅ API Key aktif - Radar çalışıyor!
-        </div>
-        <button onclick="closeWeatherPanel()" style="margin-top: 8px; padding: 4px 8px; font-size: 11px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Kapat</button>
-      </div>
-    `;
-    return div;
-  };
-  weatherPanel.addTo(map);
-  console.log('Panel eklendi');
-}
-
-function closeWeatherPanel() {
-  if (weatherPanel) {
-    map.removeControl(weatherPanel);
-    weatherPanel = null;
-    console.log('Panel kapatıldı');
-  }
-}
-
 // Taban harita katmanları
 var baseLayers = {
   'osm': L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap katkıcıları" }),
@@ -955,16 +875,7 @@ if (visitModalClose) visitModalClose.addEventListener('click', closeVisitModal);
 if (visitModal) visitModal.addEventListener('click', function (e) { if (e.target && e.target.classList && e.target.classList.contains('modal-backdrop')) closeVisitModal(); });
 if (visitSave) visitSave.addEventListener('click', saveVisitModal);
 
-// Hava durumu butonu - herkes kullanabilir
-const weatherBtn = document.getElementById('weather-btn');
-if (weatherBtn) {
-  weatherBtn.addEventListener('click', function() {
-    createWeatherPanel();
-  });
-  
-  // Butonu her zaman görünür yap
-  weatherBtn.style.display = 'inline-flex';
-}
+// Filtre olaylarını bağla ve ilk hesaplama
 updateStats();
 
 // Sayfa yüklendiğinde rota listesini güncelle
