@@ -534,6 +534,18 @@ function haversineNm(lat1, lon1, lat2, lon2) {
   return dKm * 0.539957; // km -> deniz mili
 }
 
+// Mesafe hesaplama fonksiyonu
+function haversineNm(lat1, lon1, lat2, lon2) {
+  function toRad(d){ return d * Math.PI / 180; }
+  var Rkm = 6371;
+  var dLat = toRad(lat2 - lat1);
+  var dLon = toRad(lon2 - lon1);
+  var a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)*Math.sin(dLon/2);
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  var dKm = Rkm * c;
+  return dKm * 0.539957; // km -> deniz mili
+}
+
 // Hata önleme ve güvenlik kontrolleri
 function validateFlightData(payload) {
   // Boş değerleri temizle
