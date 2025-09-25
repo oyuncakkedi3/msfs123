@@ -636,8 +636,13 @@ function findNearestCities(clickLatLng) {
 
 // Hover için bilgi gösterme fonksiyonları
 function showFlightInfo(latLng, event) {
+  console.log('showFlightInfo çağrıldı:', latLng);
+  
   var nearestCities = findNearestCities(latLng);
-  if (nearestCities.length < 2) return;
+  if (nearestCities.length < 2) {
+    console.log('Yeterli şehir bulunamadı:', nearestCities.length);
+    return;
+  }
   
   var city1 = nearestCities[0];
   var city2 = nearestCities[1];
@@ -645,6 +650,8 @@ function showFlightInfo(latLng, event) {
   
   // localStorage'dan uçuş bilgilerini al - daha geniş toleransla
   var flights = JSON.parse(localStorage.getItem('flightSegments') || '[]');
+  console.log('localStorage flights:', flights);
+  
   var flightInfo = null;
   
   // En yakın uçuş segmentini bul
@@ -653,6 +660,7 @@ function showFlightInfo(latLng, event) {
     var flightDistance = haversineNm(latLng.lat, latLng.lng, flight.clickLatLng.lat, flight.clickLatLng.lng);
     if (flightDistance < 0.5) { // 0.5 NM içinde ise
       flightInfo = flight;
+      console.log('Uçuş bilgisi bulundu:', flightInfo);
       break;
     }
   }
@@ -672,6 +680,8 @@ function showFlightInfo(latLng, event) {
     dep: '-',
     arr: '-'
   };
+  
+  console.log('Gösterilecek bilgi:', info);
   
   // Tooltip oluştur
   var tooltip = L.tooltip({
@@ -693,6 +703,7 @@ function showFlightInfo(latLng, event) {
   
   tooltip.setLatLng(latLng).addTo(map);
   window.currentTooltip = tooltip;
+  console.log('Tooltip eklendi');
 }
 
 function hideFlightInfo() {
@@ -792,7 +803,10 @@ function openVisitModal(id) {
   });
 }
 function closeVisitModal() {
-  if (visitModal) visitModal.classList.add('hidden');
+  if (visitModal) {
+    visitModal.classList.add('hidden');
+    visitModal.removeAttribute('aria-hidden'); // aria-hidden kaldır
+  }
   currentEditId = null;
 }
 function saveVisitModal() {
