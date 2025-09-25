@@ -639,24 +639,43 @@ function findNearestCities(clickLatLng) {
 
 // Hover için bilgi gösterme fonksiyonları
 function showFlightInfo(latLng, event) {
+  console.log('=== HOVER DEBUG ===');
+  console.log('Tıklanan konum:', latLng);
+  
   var nearestCities = findNearestCities(latLng);
-  if (nearestCities.length < 2) return;
+  console.log('En yakın şehirler:', nearestCities);
+  
+  if (nearestCities.length < 2) {
+    console.log('Yeterli şehir bulunamadı');
+    return;
+  }
   
   var city1 = nearestCities[0];
   var city2 = nearestCities[1];
   var distance = haversineNm(city1.lat, city1.lng, city2.lat, city2.lng);
+  console.log('Hesaplanan mesafe:', distance);
   
-  // localStorage'dan uçuş bilgilerini al - daha geniş toleransla
+  // localStorage'dan uçuş bilgilerini al
   var flights = JSON.parse(localStorage.getItem('flightSegments') || '[]');
+  console.log('localStorage flights:', flights);
+  console.log('Toplam uçuş sayısı:', flights.length);
+  
   var flightInfo = null;
   
   // En yakın uçuş segmentini bul
   for (var i = 0; i < flights.length; i++) {
     var flight = flights[i];
-    var flightDistance = haversineNm(latLng.lat, latLng.lng, flight.clickLatLng.lat, flight.clickLatLng.lng);
-    if (flightDistance < 0.5) { // 0.5 NM içinde ise
-      flightInfo = flight;
-      break;
+    console.log('Kontrol edilen uçuş:', flight);
+    
+    if (flight.clickLatLng) {
+      var flightDistance = haversineNm(latLng.lat, latLng.lng, flight.clickLatLng.lat, flight.clickLatLng.lng);
+      console.log('Uçuş mesafesi:', flightDistance);
+      
+      if (flightDistance < 0.5) { // 0.5 NM içinde ise
+        flightInfo = flight;
+        console.log('UYUŞAN UÇUŞ BULUNDU:', flightInfo);
+        break;
+      }
     }
   }
   
@@ -675,6 +694,9 @@ function showFlightInfo(latLng, event) {
     dep: '-',
     arr: '-'
   };
+  
+  console.log('Gösterilecek bilgi:', info);
+  console.log('==================');
   
   // Tooltip oluştur
   var tooltip = L.tooltip({
