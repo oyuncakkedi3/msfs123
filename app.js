@@ -190,14 +190,12 @@ function renderMarkerPopupHtml(id, data) {
   var dep = data.depIcao || data.dep || "-";
   var arr = data.arrIcao || data.arr || "-";
   var distanceNm = (typeof data.distanceNm === 'number') ? (data.distanceNm + ' NM') : (data.distance || data.distanceNm || "-");
-  var weather = data.weather || "-";
   var notes = data.notes || "";
   var lines = [
     `<div><strong>${name}</strong></div>`,
     `<div>Uçak: ${aircraft}</div>`,
     `<div>Süre: ${duration}</div>`,
     `<div>Mesafe: ${distanceNm}</div>`,
-    `<div>Hava: ${weather}</div>`,
     `<div>Kalkış: ${dep} • İniş: ${arr}</div>`
   ];
   if (notes) lines.push(`<div>Not: ${notes}</div>`);
@@ -585,7 +583,6 @@ function openFlightModal(clickLatLng) {
   if (visitAircraft) visitAircraft.value = '';
   if (visitDuration) visitDuration.value = '';
   if (visitDistance) visitDistance.value = '';
-  if (visitWeather) visitWeather.value = '';
   if (visitDep) visitDep.value = '';
   if (visitArr) visitArr.value = '';
   if (visitNotes) visitNotes.value = '';
@@ -725,7 +722,6 @@ function editRouteSegment(index) {
     if (visitAircraft) visitAircraft.value = flights[index].aircraft || '';
     if (visitDuration) visitDuration.value = flights[index].durationMinutes || '';
     if (visitDistance) visitDistance.value = flights[index].distanceNm || '';
-    if (visitWeather) visitWeather.value = flights[index].weather || '';
     if (visitDep) visitDep.value = flights[index].depIcao || '';
     if (visitArr) visitArr.value = flights[index].arrIcao || '';
     if (visitNotes) visitNotes.value = flights[index].notes || '';
@@ -758,7 +754,6 @@ function openVisitModal(id) {
     if (visitAircraft) visitAircraft.value = d.aircraft || '';
     if (visitDuration) visitDuration.value = (typeof d.durationMinutes === 'number') ? d.durationMinutes : (parseInt(d.duration, 10) || '');
     if (visitDistance) visitDistance.value = (typeof d.distanceNm === 'number') ? d.distanceNm : (parseInt(d.distance, 10) || '');
-    if (visitWeather) visitWeather.value = d.weather || '';
     if (visitDep) visitDep.value = d.depIcao || d.dep || '';
     if (visitArr) visitArr.value = d.arrIcao || d.arr || '';
     if (visitNotes) visitNotes.value = d.notes || '';
@@ -779,7 +774,6 @@ function saveVisitModal() {
     aircraft: visitAircraft ? visitAircraft.value.trim() : '',
     durationMinutes: visitDuration && visitDuration.value !== '' ? parseInt(visitDuration.value, 10) : null,
     distanceNm: visitDistance && visitDistance.value !== '' ? parseInt(visitDistance.value, 10) : null,
-    weather: visitWeather ? visitWeather.value.trim() : '',
     depIcao: visitDep ? visitDep.value.trim().toUpperCase() : '',
     arrIcao: visitArr ? visitArr.value.trim().toUpperCase() : '',
     notes: visitNotes ? visitNotes.value.trim() : '',
@@ -810,7 +804,6 @@ function saveVisitModal() {
       aircraft: payload.aircraft,
       durationMinutes: payload.durationMinutes,
       distanceNm: payload.distanceNm,
-      weather: payload.weather,
       depIcao: payload.depIcao,
       arrIcao: payload.arrIcao,
       notes: payload.notes,
