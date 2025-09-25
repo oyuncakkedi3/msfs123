@@ -652,40 +652,12 @@ function showFlightInfo(latLng, event) {
   var city2 = nearestCities[1];
   var distance = haversineNm(city1.lat, city1.lng, city2.lat, city2.lng);
   
-  // localStorage'dan uçuş bilgilerini al
-  var flights = JSON.parse(localStorage.getItem('flightSegments') || '[]');
-  var flightInfo = null;
-  
-  // En yakın uçuş segmentini bul - daha geniş tolerans
-  for (var i = 0; i < flights.length; i++) {
-    var flight = flights[i];
-    if (flight.clickLatLng) {
-      var flightDistance = haversineNm(latLng.lat, latLng.lng, flight.clickLatLng.lat, flight.clickLatLng.lng);
-      if (flightDistance < 2.0) { // 2 NM içinde ise
-        flightInfo = flight;
-        break;
-      }
-    }
-  }
-  
-  // Bilgileri hazırla
-  var aircraft = flightInfo ? (flightInfo.aircraft || '-') : '-';
-  var duration = flightInfo && flightInfo.durationMinutes ? (flightInfo.durationMinutes + ' dk') : '-';
-  var distanceText = flightInfo && flightInfo.distanceNm ? (flightInfo.distanceNm + ' NM') : (Math.round(distance) + ' NM');
-  var weather = flightInfo ? (flightInfo.weather || '-') : '-';
-  var dep = flightInfo ? (flightInfo.depIcao || '-') : '-';
-  var arr = flightInfo ? (flightInfo.arrIcao || '-') : '-';
-  
-  // Tooltip oluştur
+  // Tooltip oluştur - sadece mesafe
   var tooltip = L.tooltip({
     content: `
-      <div style="font-size: 12px; line-height: 1.4; min-width: 200px; padding: 8px;">
+      <div style="font-size: 12px; line-height: 1.4; min-width: 150px; padding: 8px;">
         <div style="font-weight: bold; margin-bottom: 6px; color: #1e40af; font-size: 13px;">${city1.name} → ${city2.name}</div>
-        <div style="margin-bottom: 3px; color: #333;">✈️ Uçak: <strong>${aircraft}</strong></div>
-        <div style="margin-bottom: 3px; color: #333;">⏱️ Süre: <strong>${duration}</strong></div>
-        <div style="margin-bottom: 3px; color: #333;">📏 Mesafe: <strong>${distanceText}</strong></div>
-        <div style="margin-bottom: 3px; color: #333;">🌤️ Hava: <strong>${weather}</strong></div>
-        <div style="margin-bottom: 3px; color: #333;">🛫 Kalkış: <strong>${dep}</strong> • 🛬 İniş: <strong>${arr}</strong></div>
+        <div style="margin-bottom: 3px; color: #333;">📏 Mesafe: <strong>${Math.round(distance)} NM</strong></div>
       </div>
     `,
     permanent: false,
