@@ -639,80 +639,58 @@ function findNearestCities(clickLatLng) {
 
 // Hover için bilgi gösterme fonksiyonları
 function showFlightInfo(latLng, event) {
-  console.log('=== HOVER DEBUG ===');
-  console.log('Tıklanan konum:', latLng);
+  // Önce mevcut tooltip'i temizle
+  if (window.currentTooltip) {
+    map.removeLayer(window.currentTooltip);
+    window.currentTooltip = null;
+  }
   
   var nearestCities = findNearestCities(latLng);
-  console.log('En yakın şehirler:', nearestCities);
-  
-  if (nearestCities.length < 2) {
-    console.log('Yeterli şehir bulunamadı');
-    return;
-  }
+  if (nearestCities.length < 2) return;
   
   var city1 = nearestCities[0];
   var city2 = nearestCities[1];
   var distance = haversineNm(city1.lat, city1.lng, city2.lat, city2.lng);
-  console.log('Hesaplanan mesafe:', distance);
   
   // localStorage'dan uçuş bilgilerini al
   var flights = JSON.parse(localStorage.getItem('flightSegments') || '[]');
-  console.log('localStorage flights:', flights);
-  console.log('Toplam uçuş sayısı:', flights.length);
-  
   var flightInfo = null;
   
-  // En yakın uçuş segmentini bul
+  // En yakın uçuş segmentini bul - daha geniş tolerans
   for (var i = 0; i < flights.length; i++) {
     var flight = flights[i];
-    console.log('Kontrol edilen uçuş:', flight);
-    
     if (flight.clickLatLng) {
       var flightDistance = haversineNm(latLng.lat, latLng.lng, flight.clickLatLng.lat, flight.clickLatLng.lng);
-      console.log('Uçuş mesafesi:', flightDistance);
-      
-      if (flightDistance < 0.5) { // 0.5 NM içinde ise
+      if (flightDistance < 2.0) { // 2 NM içinde ise
         flightInfo = flight;
-        console.log('UYUŞAN UÇUŞ BULUNDU:', flightInfo);
         break;
       }
     }
   }
   
-  var info = flightInfo ? {
-    aircraft: flightInfo.aircraft || '-',
-    duration: flightInfo.durationMinutes ? flightInfo.durationMinutes + ' dk' : '-',
-    distance: flightInfo.distanceNm ? flightInfo.distanceNm + ' NM' : Math.round(distance) + ' NM',
-    weather: flightInfo.weather || '-',
-    dep: flightInfo.depIcao || '-',
-    arr: flightInfo.arrIcao || '-'
-  } : {
-    aircraft: '-',
-    duration: '-',
-    distance: Math.round(distance) + ' NM',
-    weather: '-',
-    dep: '-',
-    arr: '-'
-  };
-  
-  console.log('Gösterilecek bilgi:', info);
-  console.log('==================');
+  // Bilgileri hazırla
+  var aircraft = flightInfo ? (flightInfo.aircraft || '-') : '-';
+  var duration = flightInfo && flightInfo.durationMinutes ? (flightInfo.durationMinutes + ' dk') : '-';
+  var distanceText = flightInfo && flightInfo.distanceNm ? (flightInfo.distanceNm + ' NM') : (Math.round(distance) + ' NM');
+  var weather = flightInfo ? (flightInfo.weather || '-') : '-';
+  var dep = flightInfo ? (flightInfo.depIcao || '-') : '-';
+  var arr = flightInfo ? (flightInfo.arrIcao || '-') : '-';
   
   // Tooltip oluştur
   var tooltip = L.tooltip({
     content: `
-      <div style="font-size: 12px; line-height: 1.4; min-width: 200px;">
-        <div style="font-weight: bold; margin-bottom: 4px; color: #1e40af;">${city1.name} → ${city2.name}</div>
-        <div style="margin-bottom: 2px;">✈️ Uçak: ${info.aircraft}</div>
-        <div style="margin-bottom: 2px;">⏱️ Süre: ${info.duration}</div>
-        <div style="margin-bottom: 2px;">📏 Mesafe: ${info.distance}</div>
-        <div style="margin-bottom: 2px;">🌤️ Hava: ${info.weather}</div>
-        <div style="margin-bottom: 2px;">🛫 Kalkış: ${info.dep} • 🛬 İniş: ${info.arr}</div>
+      <div style="font-size: 12px; line-height: 1.4; min-width: 200px; padding: 8px;">
+        <div style="font-weight: bold; margin-bottom: 6px; color: #1e40af; font-size: 13px;">${city1.name} → ${city2.name}</div>
+        <div style="margin-bottom: 3px; color: #333;">✈️ Uçak: <strong>${aircraft}</strong></div>
+        <div style="margin-bottom: 3px; color: #333;">⏱️ Süre: <strong>${duration}</strong></div>
+        <div style="margin-bottom: 3px; color: #333;">📏 Mesafe: <strong>${distanceText}</strong></div>
+        <div style="margin-bottom: 3px; color: #333;">🌤️ Hava: <strong>${weather}</strong></div>
+        <div style="margin-bottom: 3px; color: #333;">🛫 Kalkış: <strong>${dep}</strong> • 🛬 İniş: <strong>${arr}</strong></div>
       </div>
     `,
     permanent: false,
     direction: 'top',
-    offset: [0, -15],
+    offset: [0, -10],
     className: 'flight-tooltip'
   });
   
