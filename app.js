@@ -516,15 +516,33 @@ if (closeRoutePanel) {
   });
 }
 
-function haversineNm(lat1, lon1, lat2, lon2) {
-  function toRad(d){ return d * Math.PI / 180; }
-  var Rkm = 6371;
-  var dLat = toRad(lat2 - lat1);
-  var dLon = toRad(lon2 - lon1);
-  var a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)*Math.sin(dLon/2);
-  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  var dKm = Rkm * c;
-  return dKm * 0.539957; // km -> deniz mili
+// Hata önleme ve güvenlik kontrolleri
+function validateFlightData(payload) {
+  // Boş değerleri temizle
+  if (payload.durationMinutes === null || payload.durationMinutes === '') payload.durationMinutes = null;
+  if (payload.distanceNm === null || payload.distanceNm === '') payload.distanceNm = null;
+  
+  // Sayısal değerleri kontrol et
+  if (payload.durationMinutes !== null && (!isFinite(payload.durationMinutes) || payload.durationMinutes < 0)) {
+    alert('Süre geçersiz. Pozitif bir sayı girin.');
+    return false;
+  }
+  if (payload.distanceNm !== null && (!isFinite(payload.distanceNm) || payload.distanceNm < 0)) {
+    alert('Mesafe geçersiz. Pozitif bir sayı girin.');
+    return false;
+  }
+  
+  // ICAO kodlarını kontrol et
+  if (payload.depIcao && payload.depIcao.length > 4) {
+    alert('ICAO kodu en fazla 4 karakter olabilir.');
+    return false;
+  }
+  if (payload.arrIcao && payload.arrIcao.length > 4) {
+    alert('ICAO kodu en fazla 4 karakter olabilir.');
+    return false;
+  }
+  
+  return true;
 }
 
 // Modal yardımcıları
@@ -595,12 +613,19 @@ function showFlightInfo(latLng, event) {
   var city2 = nearestCities[1];
   var distance = haversineNm(city1.lat, city1.lng, city2.lat, city2.lng);
   
-  // localStorage'dan uçuş bilgilerini al
+  // localStorage'dan uçuş bilgilerini al - daha geniş toleransla
   var flights = JSON.parse(localStorage.getItem('flightSegments') || '[]');
-  var flightInfo = flights.find(function(f) {
-    return Math.abs(f.clickLatLng.lat - latLng.lat) < 0.01 && 
-           Math.abs(f.clickLatLng.lng - latLng.lng) < 0.01;
-  });
+  var flightInfo = null;
+  
+  // En yakın uçuş segmentini bul
+  for (var i = 0; i < flights.length; i++) {
+    var flight = flights[i];
+    var flightDistance = haversineNm(latLng.lat, latLng.lng, flight.clickLatLng.lat, flight.clickLatLng.lng);
+    if (flightDistance < 0.5) { // 0.5 NM içinde ise
+      flightInfo = flight;
+      break;
+    }
+  }
   
   var info = flightInfo ? {
     aircraft: flightInfo.aircraft || '-',
@@ -754,24 +779,49 @@ function saveVisitModal() {
     updatedAt: Date.now()
   };
   
+  // Validasyon kontrolü
+  if (!validateFlightData(payload)) return;
+  
   // Eğer rota segmenti için kaydediliyorsa (currentEditId null ise)
   if (!currentEditId) {
-    // Rota segmenti verilerini localStorage'a kaydet veya ayrı bir collection'a
-    var flightId = 'flight_' + Date.now();
+    var flights = JSON.parse(localStorage.getItem('flightSegments') || '[]');
+    
+    // Aynı konuma yakın mevcut uçuş var mı kontrol et
+    var existingFlightIndex = -1;
+    for (var i = 0; i < flights.length; i++) {
+      var flight = flights[i];
+      var distance = haversineNm(currentClickLatLng.lat, currentClickLatLng.lng, flight.clickLatLng.lat, flight.clickLatLng.lng);
+      if (distance < 0.1) { // 0.1 NM içinde ise aynı segment
+        existingFlightIndex = i;
+        break;
+      }
+    }
+    
     var flightData = {
-      ...payload,
+      depCity: payload.depCity,
+      arrCity: payload.arrCity,
+      aircraft: payload.aircraft,
+      durationMinutes: payload.durationMinutes,
+      distanceNm: payload.distanceNm,
+      weather: payload.weather,
+      depIcao: payload.depIcao,
+      arrIcao: payload.arrIcao,
+      notes: payload.notes,
       clickLatLng: currentClickLatLng,
-      id: flightId
+      id: existingFlightIndex >= 0 ? flights[existingFlightIndex].id : 'flight_' + Date.now(),
+      updatedAt: Date.now()
     };
     
-    // Basit bir şekilde localStorage'a kaydet (veya Firebase'e ayrı collection olarak)
-    var flights = JSON.parse(localStorage.getItem('flightSegments') || '[]');
-    flights.push(flightData);
+    if (existingFlightIndex >= 0) {
+      // Mevcut uçuşu güncelle
+      flights[existingFlightIndex] = flightData;
+    } else {
+      // Yeni uçuş ekle
+      flights.push(flightData);
+    }
+    
     localStorage.setItem('flightSegments', JSON.stringify(flights));
-    
-    // Rota listesini güncelle
     updateRouteList();
-    
     closeVisitModal();
     return;
   }
@@ -819,3 +869,18 @@ if (visitSave) visitSave.addEventListener('click', saveVisitModal);
 
 // Filtre olaylarını bağla ve ilk hesaplama
 updateStats();
+
+// Sayfa yüklendiğinde rota listesini güncelle
+if (routeList) {
+  updateRouteList();
+}
+
+// Hata yakalama ve loglama
+window.addEventListener('error', function(e) {
+  console.error('Uygulama hatası:', e.error);
+});
+
+// localStorage temizleme (geliştirme için)
+if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+  console.log('Geliştirme modu: localStorage temizlenebilir');
+}
