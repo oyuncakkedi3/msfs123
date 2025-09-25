@@ -138,7 +138,13 @@ map.on('moveend', updateHashFromMap);
 // Şehir/rota
 var cityMarkers = new Map();
 var cityData = new Map(); // id -> last data snapshot
-var routeLine = L.polyline([], { color: "#1e40af", weight: 8, className: 'route-line' }).addTo(map);
+var routeLine = L.polyline([], { 
+  color: "#1e40af", 
+  weight: 12, 
+  className: 'route-line',
+  interactive: true,
+  bubblingMouseEvents: false
+}).addTo(map);
 
 // Rota çizgisine CTRL + tıklama eventi (admin için)
 routeLine.on('click', function(e) {
@@ -148,6 +154,7 @@ routeLine.on('click', function(e) {
   if (!e.originalEvent.ctrlKey) return;
   
   e.originalEvent.stopPropagation(); // Harita tıklama eventini engelle
+  e.originalEvent.preventDefault(); // Varsayılan davranışı engelle
   openFlightModal(e.latlng);
 });
 
