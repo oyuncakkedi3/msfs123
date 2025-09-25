@@ -399,29 +399,3 @@ button { cursor: pointer; }
 .flight-tooltip::before {
   border-top-color: #1e40af !important;
 }
-
-/* Hava durumu paneli */
-.weather-panel {
-  z-index: 1000;
-}
-
-.weather-btn {
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
-  padding: 8px 12px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s;
-  text-align: left;
-}
-
-.weather-btn:hover {
-  background: #e9ecef;
-  border-color: #adb5bd;
-}
-
-.weather-btn:active {
-  background: #dee2e6;
-  transform: translateY(1px);
-}
